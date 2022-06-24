@@ -63,7 +63,7 @@ class _MyHomePageState extends State<MyHomePage> {
   ScrollController _scrollController = ScrollController();
   int _indexPage = 0, _downloadStatus = 0;
   Map<int, int> _downloadProgress = <int, int>{};
-  String? _videoPath;
+  String? _videoPath, _videoTitle;
   final ReceivePort _port = ReceivePort();
   List<TaskInfo>? _tasks;
 
@@ -148,9 +148,9 @@ class _MyHomePageState extends State<MyHomePage> {
                 Container(
                   padding: const EdgeInsets.only(left: 20),
                   alignment: Alignment.centerLeft,
-                  child: const Text(
-                    'Persamaan Dasar Akuntansi',
-                    style: TextStyle(fontSize: 10, color: Colors.grey),
+                  child: Text(
+                    _videoTitle != null ? _videoTitle!.replaceAll('&#8211;', '') : 'Persamaan Dasar Akuntansi',
+                    style: const TextStyle(fontSize: 10, color: Colors.grey),
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -310,8 +310,8 @@ class _MyHomePageState extends State<MyHomePage> {
               arcBackgroundColor: Colors.green,
               arcType: ArcType.FULL,
             ),
-            SizedBox(height: 10),
-            Text('Memuat data...', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 14))
+            const SizedBox(height: 10),
+            const Text('Memuat data...', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey, fontSize: 14))
           ],
         )
       ),
@@ -356,7 +356,6 @@ class _MyHomePageState extends State<MyHomePage> {
     String _path = await localPath;
     if(_path != null && _path.isNotEmpty)
     {
-      print(_path);
       await FlutterDownloader.enqueue(
         url: url,
         savedDir: '$_path/',
@@ -418,7 +417,7 @@ class _MyHomePageState extends State<MyHomePage> {
       return TextButton(
         onPressed: () {},
         style: ButtonStyle(
-            backgroundColor: MaterialStateProperty.all<Color>(Colors.grey[400]!),
+            backgroundColor: MaterialStateProperty.all<Color>(Colors.grey[100]!),
             shape: MaterialStateProperty.all<OutlinedBorder>(
               const RoundedRectangleBorder(
                 borderRadius: BorderRadius.all(Radius.circular(0)),
@@ -446,7 +445,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       '${data.duration! ~/ 60} Menit' : data.duration != null && data.duration! > 3600 ?
                       '${(data.duration! ~/ 60) ~/ 60} Jam' : '0 Menit',
                       maxLines: 1,
-                      style: const TextStyle(color: Colors.black38, fontSize: 12),
+                      style: const TextStyle(color: Colors.black45, fontSize: 12),
                     ),
                   )
                 ],
@@ -459,10 +458,14 @@ class _MyHomePageState extends State<MyHomePage> {
     else
     {
       return Container(
-        padding: EdgeInsets.only(left: 10),
+        padding: const EdgeInsets.only(left: 10),
         child: TextButton(
           onPressed: () async
           {
+            setState((){
+              _videoTitle = data.title;
+            });
+
             if(File('$_videoPath/${data.offline_video_link!.split('/').last}').existsSync())
             {
               initVideoLocal(File('$_videoPath/${data.offline_video_link!.split('/').last}'));
@@ -473,11 +476,13 @@ class _MyHomePageState extends State<MyHomePage> {
             }
             else
             {
-              snackBar('Video tidak tersedia');
+              snackBar('Online video tidak tersedia, silakan unduh untuk menonton offline');
             }
           },
           style: ButtonStyle(
-              backgroundColor: MaterialStateProperty.all<Color>(Colors.white),
+              backgroundColor: MaterialStateProperty.all<Color>(
+                  _videoTitle != null && _videoTitle!.isNotEmpty && _videoTitle == data.title ?
+                  Colors.green.withOpacity(80) : Colors.white),
               shape: MaterialStateProperty.all<OutlinedBorder>(
                 const RoundedRectangleBorder(
                   borderRadius: BorderRadius.all(Radius.circular(0)),
@@ -536,7 +541,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           _downloadProgress[data.key!] = 0;
                         });
                         createDownloadTask(data.offline_video_link!);
-                        Timer.periodic(Duration(seconds: 1), (Timer t)
+                        Timer.periodic(const Duration(seconds: 1), (Timer t)
                         {
                           if(mounted)
                           {
@@ -566,7 +571,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             borderRadius: BorderRadius.all(Radius.circular(5)),
                           ),
                         )),
-                    child: Text('Tonton Offline', style: TextStyle(color: Colors.white, fontSize: 10)),
+                    child: const Text('Tonton Offline', style: TextStyle(color: Colors.white, fontSize: 10)),
                   ),
                 ) :
                 data.offline_video_link == null || data.offline_video_link!.isEmpty ?
@@ -582,7 +587,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             borderRadius: BorderRadius.all(Radius.circular(5)),
                           ),
                         )),
-                    child: Text('Null', style: TextStyle(fontSize: 10)),
+                    child: const Text('Null', style: TextStyle(fontSize: 10)),
                   ),
                 ) :
                 _downloadProgress[data.key!]! > 0 && _downloadProgress[data.key!]! < 100 ?
@@ -608,7 +613,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             borderRadius: BorderRadius.all(Radius.circular(5)),
                           ),
                         )),
-                    child: Text('Tersimpan', style: TextStyle(fontSize: 10)),
+                    child: const Text('Tersimpan', style: TextStyle(fontSize: 10)),
                   ),
                 ),
               )
@@ -623,6 +628,10 @@ class _MyHomePageState extends State<MyHomePage> {
   {
     if(source.isNotEmpty)
     {
+      _videoPlayerController?.removeListener(() {
+        setState(() {});
+      });
+
       setState((){
         _videoPlayerController = VideoPlayerController.network(source);
       });
@@ -639,6 +648,10 @@ class _MyHomePageState extends State<MyHomePage> {
   {
     if(source.existsSync())
     {
+      _videoPlayerController?.removeListener(() {
+        setState(() {});
+      });
+
       setState((){
         _videoPlayerController = VideoPlayerController.file(source);
       });
@@ -655,8 +668,8 @@ class _MyHomePageState extends State<MyHomePage> {
   {
     final snackBar = SnackBar(
       backgroundColor: Colors.red,
-      content: Text('$text', style: TextStyle(color: Colors.white)),
-      duration: Duration(seconds: 3),
+      content: Text(text, style: const TextStyle(color: Colors.white)),
+      duration: const Duration(seconds: 3),
     );
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
@@ -674,15 +687,15 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     }
     List<String> initVideoUrl = [];
-    _curriculum.forEach((data) {
+    for (var data in _curriculum) {
       if(data.online_video_link != null && data.online_video_link!.isNotEmpty)
       {
         initVideoUrl.add(data.online_video_link!);
       }
       _downloadProgress[data.key!] = 0;
-    });
+    }
 
-    if(initVideoUrl.length > 0)
+    if(initVideoUrl.isNotEmpty)
     {
       initVideoUrl.shuffle();
     }
