@@ -482,7 +482,7 @@ class _MyHomePageState extends State<MyHomePage> {
           style: ButtonStyle(
               backgroundColor: MaterialStateProperty.all<Color>(
                   _videoTitle != null && _videoTitle!.isNotEmpty && _videoTitle == data.title ?
-                  Colors.green.withOpacity(80) : Colors.white),
+                  Colors.green.withOpacity(0.8) : Colors.white),
               shape: MaterialStateProperty.all<OutlinedBorder>(
                 const RoundedRectangleBorder(
                   borderRadius: BorderRadius.all(Radius.circular(0)),
