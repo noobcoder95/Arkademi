@@ -1,5 +1,5 @@
-# arkademi
+# Video Streaming
 
-Arkademi Test app
+Simple Video Streaming Education With Rest API
 
 ## Ferdiansyah
